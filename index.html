@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+
+<!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
+<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+<head>
+  <meta charset="utf-8" />
+
+  <!-- Set the viewport width to device width for mobile -->
+  <meta name="viewport" content="width=device-width" />
+
+  <title>Welcome to localExplorer</title>
+  
+  <!-- Included CSS Files (Uncompressed) -->
+  <!--
+  <link rel="stylesheet" href="stylesheets/foundation.css">
+  -->
+  
+  <!-- Included CSS Files (Compressed) -->
+  <link rel="stylesheet" href="stylesheets/foundation.min.css">
+  <link rel="stylesheet" href="stylesheets/app.css">
+  <link href='http://fonts.googleapis.com/css?family=Love+Ya+Like+A+Sister' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Marmelad' rel='stylesheet' type='text/css'>
+
+  	<script src="javascripts/modernizr.foundation.js"></script>
+    <script type="text/javascript" src="./jquery-1.7.2.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+	<script type="text/javascript">
+    	var map;
+		var pre_infowindow;
+      	function initialize() {
+        var mapOptions = {
+          zoom: 12,
+          center: new google.maps.LatLng(37.81, -122.3419),
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        map = new google.maps.Map(document.getElementById('map_canvas'), mapOptions);
+			google.maps.event.addListener(map, "click", function(event) {
+				var pattern=document.getElementsByClassName("active")[0].title;
+				if(pattern=="tweets+coupons"){
+					loadTweets(event);
+					loadCoupons(event);
+				}
+				if(pattern=="tweets only")
+					loadTweets(event);
+				if(pattern=="coupons only")
+					loadCoupons(event);
+			});
+		}
+		function loadTweets(event){
+			$.ajax({
+					type:"GET",
+					dataType:"jsonp",
+					cache:false,
+					url:"http://search.twitter.com/search.json?geocode="+event.latLng.toUrlValue(6)+",3mi"+"&result_type=mixed",
+					success:function(data){
+						var content="<h3>Local Tweets</h3>";
+						for(var i=0;i<data.results.length;i++){
+							var geo=data.results[i].geo;
+							if(geo==null){
+								content+="<div class='post'><img src='"+data.results[i].profile_image_url_https+"'/><a href='https://twitter.com/"+data.results[i].from_user+"' target='_blank'>"+data.results[i].from_user+"</a>:"+data.results[i].text+"<br><br></div>";
+							}
+							else
+								placeMarker(new google.maps.LatLng(geo.coordinates[0],geo.coordinates[1],false), map, "<h3>Local Tweets</h3><div class='post'><img src='"+data.results[i].profile_image_url_https+"'/><a href='https://twitter.com/"+data.results[i].from_user+"' target='_blank'>"+data.results[i].from_user+"</a>:"+data.results[i].text, 0);
+							placeMarker(event.latLng, map, content, 0);
+						}
+					}
+				});
+		}
+		function loadCoupons(event){
+			$.ajax({
+					type:"GET",
+					dataType:"jsonp",
+					cache:false,
+					url:"http://api.8coupons.com/v1/getdeals?key=be8d67e891e09ff60b1e47096b910646343a5e228d2bff8c7fe162fc541cd94a365298f70de99427b5a205d3674cc232&mileradius=3&limit=50&orderby=radius&lat="+event.latLng.lat()+"&lon="+event.latLng.lng()+"&categoryid=1,2,3,4,6",
+					success:function(data){
+						for(var i=0;i<data.length;i++){
+							if(data[i].showImage==null)
+								placeMarker(new google.maps.LatLng(data[i].lat,data[i].lon,false), map, "<h2>"+data[i].dealTitle+"</h2><div class='cou'>"+data[i].dealinfo+"<br><br>expiration date: "+data[i].expirationDate+"<br>see datails: <a href='"+data[i].URL+"' target='_blank'>"+data[i].URL+"</a>", 1);
+							else
+								placeMarker(new google.maps.LatLng(data[i].lat,data[i].lon,false), map, "<h2>"+data[i].dealTitle+"</h2><div class='cou'><img src='"+data[i].showImage+"'>"+data[i].dealinfo+"<br><br>expiration date: "+data[i].expirationDate+"<br>see datails: <a href='"+data[i].URL+"' target='_blank'>"+data[i].URL+"</a>", 1);
+						}
+					}
+				});
+		}		
+		function placeMarker(position, map, message, type) {
+        var marker = new google.maps.Marker({
+          position: position,
+          map: map
+        });
+		if(type==0)
+			marker.setIcon('http://maps.google.com/mapfiles/ms/icons/blue-dot.png');
+        var infowindow = new google.maps.InfoWindow({
+          content: message
+        });
+		if(pre_infowindow){
+			pre_infowindow.close();
+		}
+		pre_infowindow=infowindow;
+        google.maps.event.addListener(marker, 'click', function() {
+          infowindow.open(marker.get('map'), marker);
+        });
+      }
+      google.maps.event.addDomListener(window, 'load', initialize);
+    </script>
+  <!-- IE Fix for HTML5 Tags -->
+  <!--[if lt IE 9]>
+    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+</head>
+<body>
+  <div class="row">
+    <div class="twelve columns">
+      <p>
+        <span class="font_0">
+            <span class="color_18">local</span><span class="color_28">E</span><span class="color_18">xplorer </span>
+        </span>
+            <span class="font_2">tweets and events around you</span>
+            <span class="font_0">
+        ​</span>
+        </p>
+    </div>
+  </div>
+	
+	
+  <div class="row">
+    <div class="twelve columns">
+
+      <dl class="tabs">
+        <dd title="tweets+coupons" class="active"><a href="#simple1">tweets+coupons</a></dd>
+        <dd title="tweets only"><a href="#simple2">tweets only</a></dd>
+        <dd title="coupons only"><a href="#simple3">coupons only</a></dd>
+        <dd title="contact"><a href="mailto:10302010068@fudan.edu.cn">contact</a></dd>
+      </dl>
+
+      <ul class="tabs-content">
+        <li class="active" id="simple1Tab">Click on the map and get latest local tweets and coupons!</li>
+        <li id="simple2Tab">Click on the map and get latest local tweets!</li>
+        <li id="simple3Tab">Click on the map and get latest local coupons!</li>
+      </ul>
+      
+      <div class="row">
+        <div id="map_canvas" class="twelve columns">
+          
+        </div>
+      </div>
+      
+    </div>
+  </div>
+  <footer>
+        <div id="footer" class="twelve columns">
+            <p>Copyright&copy;2012-2022&nbsp;<span class="color_18">local</span><span class="color_28">E</span><span class="color_18">xplorer </span>&nbsp;All rights reserved.</p>
+        </div>
+   	</footer>
+  
+  <!-- Included JS Files (Uncompressed) -->
+  <!--
+  
+  <script src="javascripts/modernizr.foundation.js"></script>
+  
+  <script src="javascripts/jquery.js"></script>
+  
+  <script src="javascripts/jquery.foundation.mediaQueryToggle.js"></script>
+  
+  <script src="javascripts/jquery.foundation.reveal.js"></script>
+  
+  <script src="javascripts/jquery.foundation.orbit.js"></script>
+  
+  <script src="javascripts/jquery.foundation.navigation.js"></script>
+  
+  <script src="javascripts/jquery.foundation.buttons.js"></script>
+  
+  <script src="javascripts/jquery.foundation.tabs.js"></script>
+  
+  <script src="javascripts/jquery.foundation.forms.js"></script>
+  
+  <script src="javascripts/jquery.foundation.tooltips.js"></script>
+  
+  <script src="javascripts/jquery.foundation.accordion.js"></script>
+  
+  <script src="javascripts/jquery.placeholder.js"></script>
+  
+  <script src="javascripts/jquery.foundation.alerts.js"></script>
+  
+  -->
+  
+  <!-- Included JS Files (Compressed) -->
+  <script src="javascripts/foundation.min.js"></script>
+  
+  <!-- Initialize JS Plugins -->
+  <script src="javascripts/app.js"></script>
+</body>
+</html>
